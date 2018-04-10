@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from tempfile import mkdtemp
 from subprocess import check_call, check_output
+from shutil import rmtree
 
 YOSYS_CMDS = """
 read_verilog {0}
@@ -39,7 +40,8 @@ def get_n_inputs(lines):
 
 @click.command()
 @click.argument('input_path', type=click.Path(exists=True))
-def main(input_path):
+@click.option('--clean/--dont-clean', default=True)
+def main(input_path, clean):
     input_path = Path(input_path)
 
     root = Path(mkdtemp(prefix="model_count"))
@@ -92,6 +94,9 @@ def main(input_path):
 
     print(models)
     print(models / (2**len(counting_vars)))
+
+    if clean:
+        rmtree(str(root))
 
 
 if __name__ == '__main__':
