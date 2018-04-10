@@ -4,12 +4,7 @@ from pathlib import Path
 
 TEMPLATE = """
 module step(input [0:{k}] x, input a, output [0:{k}] y);
-   wire [0:{k}] tmp;
-   wire clip;
-
-   assign tmp = a == 1 ? x + 1 : x - 1;
-   assign clip = ((x=={max_val}) & a) | ((x==0) & (~a));
-   assign y = clip ? x : tmp;
+   assign y = a == 1 ? x + 1 : x - 1;
 endmodule
 
 module steps(
