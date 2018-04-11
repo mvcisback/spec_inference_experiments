@@ -1,6 +1,7 @@
 Repo for experiments.
 
 # Requirements
+0. python3.6+ and the click library.
 1. aiger: http://fmv.jku.at/aiger/
    - aigtoaig: To uncompress aig files.
    - aigtocnf: To convert aig circuit to cnf.
