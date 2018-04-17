@@ -6,7 +6,7 @@ from parsimonious import Grammar, NodeVisitor
 # TODO: need to enable parsing false and true circuits
 
 AAG_GRAMMAR = Grammar(u'''
-aag = header ios latches ios gates symbols comments
+aag = header ios latches ios gates symbols comments?
 header = "aag" _ id _ id _ id _ id _ id EOL
 
 ios = io*
@@ -19,11 +19,12 @@ gates = gate*
 gate = id _ id _ id EOL
 
 symbols = symbol*
-symbol =  symbol_kind id _ (EOL / ~".")+
+symbol =  symbol_kind id _ symbol_name EOL
 symbol_kind = ("i" / "o" / "l")
+symbol_name = (~r".")+
 
-comments = comment*
-comment = "c" ~r"."+
+comments = "c" EOL comment+
+comment = (~r".")+ EOL
 
 _ = ~r"\s"+
 id = ~r"\d"+
@@ -34,7 +35,7 @@ EOL = "\\n"
 Header = namedtuple('Header', ['max_var_index', 'num_inputs',
                                'num_latches', 'num_outputs',
                                'num_ands'])
-Symbol = namedtuple('Symbol', ['kind', 'name'])
+Symbol = namedtuple('Symbol', ['kind', 'index', 'name'])
 AAG = namedtuple('AAG', ['header', 'inputs', 'outputs', 
                          'latches', 'gates', 'symbols', 'comments'])
 
@@ -65,10 +66,16 @@ class AAGVisitor(NodeVisitor):
         inputs, outputs = ios[:header.num_inputs], ios[header.num_inputs:]
         return AAG(header, inputs, outputs, latches, gates, symbols, comments)
 
-    def visit_symbol(self, _, children):
-        return Symbol(children[0], children[1])
+    def visit_symbol(self, node, children):
+        return Symbol(children[0], children[1], children[3])
 
     def visit_symbol_kind(self, node, _):
+        return node.text
+
+    def visit_symbol_name(self, node, _):
+        return node.text
+
+    def visit_comments(self, node, _):
         return node.text
 
 
