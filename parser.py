@@ -1,9 +1,10 @@
 from collections import namedtuple
+from itertools import chain
+from math import log2, exp
 
+from dd.cudd import BDD
+from toposort import toposort
 from parsimonious import Grammar, NodeVisitor
-
-# aig = header inputs latches outputs gates symbols comments
-# TODO: need to enable parsing false and true circuits
 
 AAG_GRAMMAR = Grammar(u'''
 aag = header ios latches ios gates symbols comments?
@@ -81,3 +82,34 @@ class AAGVisitor(NodeVisitor):
 
 def parse(aag_str: str, rule: str = "aag"):
     return AAGVisitor().visit(AAG_GRAMMAR[rule].parse(aag_str))
+
+
+def to_bdd(aag: AAG):
+    assert len(aag.outputs) == 1
+    assert len(aag.latches) == 0
+
+    gate_deps = {a & -2: {b & -2, c & -2} for a,b,c in aag.gates}
+    gate_lookup = {a & -2: (a, b, c) for a,b,c in aag.gates}
+    eval_order = list(toposort(gate_deps))
+
+    assert eval_order[0] <= set(aag.inputs)
+
+    bdd = BDD()
+    bdd.declare(*(f'x{i}' for i in aag.inputs))
+    gate_nodes = {i: bdd.add_expr(f'x{i}') for i in aag.inputs}
+    for gate in chain(*eval_order[1:]):
+        out, i1, i2 = gate_lookup[gate]
+        f1 = ~gate_nodes[i1 & -2] if i1 & 1 else gate_nodes[i1 & -2]
+        f2 = ~gate_nodes[i2 & -2] if i2 & 1 else gate_nodes[i2 & -2]
+        gate_nodes[out] = f1 & f2
+
+    out = aag.outputs[0]
+    return ~gate_nodes[out & -2] if out & 1 else gate_nodes[out & -2]
+
+
+def parse_and_count(aag_str):
+    aag = parse(aag_str)
+    f = to_bdd(aag)
+
+    n = aag.header.num_inputs
+    return exp(log2(f.count(n)) - n)
