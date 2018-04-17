@@ -1,7 +1,10 @@
+#!/usr/bin/env python
+
 from collections import namedtuple
 from itertools import chain
 from math import log2, exp
 
+import click
 from dd.cudd import BDD
 from toposort import toposort
 from parsimonious import Grammar, NodeVisitor
@@ -113,3 +116,14 @@ def parse_and_count(aag_str):
 
     n = aag.header.num_inputs
     return exp(log2(f.count(n)) - n)
+
+
+@click.command()
+@click.argument('path', type=click.Path(exists=True))
+def main(path):
+    with open(path, 'r') as f:
+        print(parse_and_count(''.join(f.readlines())))
+    
+
+if __name__ == '__main__':
+    main()
