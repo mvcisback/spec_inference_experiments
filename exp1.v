@@ -112,6 +112,5 @@ module phi(input [0:11] a,
    
    steps sample(.x0(3), .y0(0), .a(a), .blues(blues), .reds(reds),
                 .yellows(yellows), .browns(browns));
-   assign out = a > 11;
-   
+   assign out = a > 8;
 endmodule
